@@ -1,0 +1,1 @@
+export const FORMULAS=[['Continuidad','Q=A·v'],['Darcy-Weisbach','hf=f(L/D)v²/(2g)'],['Reynolds','Re=ρvD/μ'],['Hidrostática','P=ρgh'],['Bernoulli','P/ρg+v²/2g+z+H=pérdidas'],['Bomba','P=ρgQH/η']].map(x=>({name:x[0],formula:x[1]}));
