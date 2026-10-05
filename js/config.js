@@ -1,1 +1,0 @@
-export const CONFIG={appName:"HidroPro",version:"1.0.0",storageKey:"hidropro-project-v1",defaultFluid:"water",defaultTempC:20,gravity:9.80665,atmosphericPressurePa:101325};
