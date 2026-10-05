@@ -1,0 +1,1 @@
+const K='hidropro_v4';export const state=JSON.parse(localStorage.getItem(K)||'null')||{project:{name:'Proyecto hidráulico',nodes:[],edges:[]}};export function save(){localStorage.setItem(K,JSON.stringify(state))}export function reset(){state.project={name:'Proyecto hidráulico',nodes:[],edges:[]};save()}
