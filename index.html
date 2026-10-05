@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#2563eb">
+  <title>HidroPro · Tuberías, Hidráulica y Fluidos</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/calculators.css">
+  <link rel="stylesheet" href="css/diagram.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><div class="brand-mark">H</div><div><strong>HidroPro</strong><small>Tuberías · Hidráulica · Fluidos</small></div></div>
+  <div class="top-actions"><button id="btnNew" class="btn ghost">Nuevo</button><button id="btnSave" class="btn primary">Guardar</button><button id="btnExport" class="btn ghost">Exportar</button></div>
+</header>
+<div class="app">
+  <aside class="sidebar">
+    <button class="nav active" data-module="dashboard">🏠 <span>Inicio</span></button>
+    <button class="nav" data-module="units">↔️ <span>Unidades</span></button>
+    <button class="nav" data-module="fluids">💧 <span>Fluidos</span></button>
+    <button class="nav" data-module="pipes">🧪 <span>Tuberías</span></button>
+    <button class="nav" data-module="calculators">🧮 <span>Calculadoras</span></button>
+    <button class="nav" data-module="network">🔗 <span>Red hidráulica</span></button>
+    <button class="nav" data-module="pumps">⚙️ <span>Bombas</span></button>
+    <button class="nav" data-module="tanks">🛢️ <span>Tinacos y cisternas</span></button>
+    <button class="nav" data-module="drainage">↘️ <span>Drenaje</span></button>
+    <button class="nav" data-module="hotwater">🔥 <span>Agua caliente</span></button>
+    <button class="nav" data-module="materials">📦 <span>Materiales</span></button>
+    <button class="nav" data-module="advanced">🧠 <span>Ingeniería avanzada</span></button>
+    <button class="nav" data-module="reports">📄 <span>Reportes</span></button>
+    <button class="nav" data-module="learn">🎓 <span>Aprender</span></button>
+  </aside>
+  <main id="main"></main>
+</div>
+<div id="toast"></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
