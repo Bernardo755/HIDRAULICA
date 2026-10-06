@@ -1,1 +1,0 @@
-export const FLUIDS={water20:{name:'Agua 20 °C',rho:998.2,mu:.001002,cp:4182},water5:{name:'Agua 5 °C',rho:999.97,mu:.001519,cp:4200},water60:{name:'Agua 60 °C',rho:983.2,mu:.000466,cp:4180},air20:{name:'Aire 20 °C',rho:1.204,mu:1.825e-5,cp:1005},oil:{name:'Aceite ligero',rho:850,mu:.05,cp:2000}};

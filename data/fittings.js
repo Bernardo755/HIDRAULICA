@@ -1,1 +1,0 @@
-export const FITTINGS=[['Codo 90°',.9],['Codo 45°',.4],['Tee paso',.2],['Tee derivación',1],['Compuerta abierta',.2],['Globo abierta',10],['Entrada',.5],['Salida',1],['Check',2]].map(x=>({name:x[0],K:x[1]}));
