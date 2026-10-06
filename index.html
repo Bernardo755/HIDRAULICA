@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador hidráulico: tinaco → WC y lavabo</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--fg:#14202e;--mut:#5d6b7c;--line:#d5dee9;--acc:#1769e0;--ok:#16975a;--warn:#d98e04;--bad:#d6382f;--water:#5db7ff;--pipe:#8da3ba;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d131b;--card:#16202c;--fg:#e6edf5;--mut:#93a3b6;--line:#2a3747;--acc:#5b9cff;--ok:#38c98a;--warn:#f0b43a;--bad:#ff6b61;--water:#3b97e6;--pipe:#5f748c}}
+:root[data-theme="dark"]{--bg:#0d131b;--card:#16202c;--fg:#e6edf5;--mut:#93a3b6;--line:#2a3747;--acc:#5b9cff;--ok:#38c98a;--warn:#f0b43a;--bad:#ff6b61;--water:#3b97e6;--pipe:#5f748c}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:12px 16px}h1{font-size:18px;margin:0}header p{margin:2px 0 0;color:var(--mut);font-size:12.5px}
+.wrap{display:grid;gap:12px;padding:0 12px 16px;grid-template-columns:1fr}
+@media(min-width:1000px){.wrap{grid-template-columns:minmax(0,1fr) 390px}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.card h3{margin:0 0 8px;font-size:14px}
+.tb{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:8px;padding:6px 10px;cursor:pointer}
+button.on{background:var(--acc);border-color:var(--acc);color:#fff}button.dg{color:var(--bad)}
+svg{width:100%;height:auto;display:block;touch-action:none;background:var(--card);border:1px solid var(--line);border-radius:10px}
+.g1{stroke:var(--line);stroke-width:.4}.g2{stroke:var(--line);stroke-width:.9}.ax{fill:var(--mut);font-size:10px}
+.gr{fill:var(--line)}.sl{fill:var(--mut)}
+.lb{font-size:11px;fill:var(--fg);paint-order:stroke;stroke:var(--card);stroke-width:3px}.lb2{fill:var(--mut)}
+.fl{stroke:#fff;stroke-width:2;stroke-dasharray:6 10;opacity:.75;animation:d 1s linear infinite;fill:none}
+@keyframes d{to{stroke-dashoffset:-16}}
+.c-ok{stroke:var(--ok)}.c-warn{stroke:var(--warn)}.c-bad{stroke:var(--bad)}.c-0{stroke:var(--pipe)}
+.g2c{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:2px}
+input,select{font:inherit;padding:5px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);min-width:0}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:4px 3px;text-align:right;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.mut{color:var(--mut)}
+.fx{border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px}.fx b{font-size:13px}
+.lg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin-top:6px}.lg i{display:inline-block;width:18px;height:5px;border-radius:3px;vertical-align:middle;margin-right:4px}
+details{font-size:12.5px}summary{cursor:pointer;font-weight:600}
+[hidden]{display:none!important}.o,.i,.a{display:none}body[data-m=obra] .o,body[data-m=apr] .a,body[data-m=ing] .i{display:block}
+textarea{font:12px monospace;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px;box-sizing:border-box;width:100%;margin-top:8px}
+.one{grid-template-columns:minmax(0,1fr)!important}#tabs{padding:0 12px 10px}footer{padding:0 16px 18px;color:var(--mut);font-size:12px}
+</style></head><body>
+<header><h1>💧 Simulador hidráulico · tinaco → WC y lavabo</h1>
+<p>Coloca el tinaco, dibuja la tubería (diámetro, longitud, ángulo, alturas) y observa caudal, velocidad, pérdidas y presión en cada mueble.</p></header>
+<nav class="tb" id="tabs"><button data-t="dis" class="on">🛠 Diseñador</button><button data-t="calc">🧮 Calculadoras</button><button data-t="cmp">📏 Comparador de Ø</button><button data-t="bom">🧾 Materiales y presupuesto</button><button data-t="prj">📁 Proyecto y reporte</button>
+<select id="md"><option value="obra">Modo: Plomero</option><option value="ing">Modo: Ingeniería</option><option value="apr">Modo: Aprender</option></select></nav>
+<div class="wrap" id="p-dis">
+<section>
+ <div class="card">
+  <div class="tb">
+   <button id="m1" class="on" onclick="setMode('sel')">✋ Seleccionar / mover</button>
+   <button id="m2" onclick="setMode('dib')">✏️ Dibujar tubo</button>
+   <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="sa" checked> Ángulos de 15°</label>
+   <button class="dg" onclick="init()">↺ Ejemplo</button>
+  </div>
+  <svg id="cv" viewBox="0 0 880 520"></svg>
+  <div class="lg"><span><i style="background:var(--ok)"></i>V 0.3–2.5 m/s</span><span><i style="background:var(--warn)"></i>V 2.5–3 (ruido)</span><span><i style="background:var(--bad)"></i>V &gt; 3 m/s</span><span><i style="background:var(--pipe)"></i>sin flujo</span></div>
+  <p class="mut" style="margin:6px 0 0;font-size:12px"><b>Dibujar:</b> clic en un nodo (círculo) y luego clic donde termina el tubo; Esc termina. <b>Mover:</b> arrastra el tinaco (solo sube/baja el tinaco) o el extremo de un tubo (arrastra lo que cuelga de él). Escala: 1 m = 70 px.</p>
+ </div>
+</section>
+<aside>
+ <div class="card"><h3>Tinaco y demanda</h3>
+  <div class="g2c" id="gp"></div></div>
+ <div class="card" id="pp"></div>
+ <div class="card"><h3>Elegir material de la red</h3><p class="mut" style="margin:0 0 6px;font-size:12px">Cada fila evalúa TODA tu red con ese material (mismos diámetros nominales; cambia el Ø interior y la rugosidad). <b>Uso resist.</b> = presión máxima (estática + golpe de ariete) ÷ presión admisible a la temperatura del agua. <b>Margen</b> = presión residual − mínima en el mueble más desfavorable.</p><div id="mc" style="overflow-x:auto"></div></div>
+ <div class="card"><h3>Diagnóstico</h3><div id="dg"></div></div>
+ <div class="card"><h3>Resultados por mueble</h3><div id="rf"></div></div>
+ <div class="card"><h3>Resultados por tubo</h3><div id="rt" style="overflow-x:auto"></div></div>
+ <div class="card"><details><summary>Método y fórmulas</summary>
+  <p><b>Energía (Bernoulli):</b> H<sub>fin</sub> = H<sub>ini</sub> − h<sub>f</sub> − h<sub>m</sub>, con H<sub>tinaco</sub> = z<sub>base</sub> + nivel de agua. Presión residual p/γ = H − z − V²/2g.</p>
+  <p><b>Fricción (Darcy-Weisbach):</b> h<sub>f</sub> = f·(L/D)·V²/2g. Re = V·D/ν (ν depende de la temperatura del agua; 1.0×10⁻⁶ m²/s a 20 °C). f = 64/Re si Re&lt;2300; si no, Swamee-Jain: f = 0.25 / [log₁₀(ε/3.7D + 5.74/Re⁰·⁹)]².</p>
+  <p><b>Locales:</b> h<sub>m</sub> = K·V²/2g. K: entrada del tinaco 0.5; codo 90° (giro ≥67.5°) 0.9; codo 45° (22.5–67.5°) 0.4; derivación en T 1.0 (se aplica a los tubos que salen de un nodo con ramal); llave esfera 0.1; compuerta 0.2; globo 10. Los codos se detectan solos por el ángulo entre tubos.</p>
+  <p><b>Caudales:</b> cada tubo lleva la suma de los muebles aguas abajo (todos abiertos a la vez). <b>Q máx. aislado</b> es el caudal que ese mueble daría solo, hasta quedar en su presión mínima.</p>
+  <p><b>Resistencia:</b> presión máxima = presión estática (H − z, en el punto más bajo del tubo) + golpe de ariete por cierre brusco (Joukowsky) ΔH = a·V/g, con a = 1/√[ρ(1/K + D/(E·e))] (K = 2.2 GPa, E y espesor e según material). La presión admisible se reduce con la temperatura (factores de reducción típicos). El cierre instantáneo es el caso extremo; válvulas de cierre lento lo reducen.</p><p class="mut">Diámetros interiores y rugosidades son valores típicos (PVC/CPVC ε=0.0015 mm, cobre 0.0015 mm, Fo.Go. 0.15 mm). Es una herramienta de estimación; verifica con la norma y el proyecto ejecutivo.</p></details></div>
+</aside></div>
+<div class="wrap one" id="p-calc" hidden><div class="card"><h3>Calculadoras rápidas</h3><label>Calculadora<select id="cs" onchange="calcDraw()"></select></label><div id="cf" style="margin-top:8px"></div><div id="cr" style="margin-top:8px"></div></div>
+<div class="card"><h3>Conversor de unidades</h3><div id="uc"></div></div></div>
+<div class="wrap one" id="p-cmp" hidden><div class="card"><h3>Comparador de diámetros</h3><div id="cmf"></div><div class="tb" style="margin-top:8px"><button onclick="cmpLoad()">⤵ Cargar del tubo seleccionado</button></div></div><div class="card" style="overflow-x:auto"><div id="cmr"></div></div></div>
+<div class="wrap one" id="p-bom" hidden><div class="card"><h3>Lista de materiales y presupuesto (desde el dibujo)</h3><p class="mut" style="margin:0 0 8px;font-size:12px">Cantidades generadas del diagrama. Captura TUS precios: la app no incluye precios de mercado. Moneda: MXN (supuesto).</p><div id="bp"></div></div><div class="card" style="overflow-x:auto"><div id="bt"></div></div><div class="card"><div id="bx"></div><div class="tb" style="margin-top:8px"><button onclick="$('#cx').value=csv();$('#cx').select()">📋 Mostrar CSV</button></div><textarea id="cx" rows="4"></textarea></div></div>
+<div class="wrap one" id="p-prj" hidden><div class="card"><h3>Proyecto</h3><label>Nombre<input id="pn" value="Mi instalación"></label><div class="tb" style="margin-top:8px"><button onclick="prjSave()">💾 Guardar en este navegador</button><button onclick="prjExp()">⬇ Exportar JSON</button><button onclick="prjImp()">⬆ Importar JSON pegado</button><button onclick="rep()">📄 Generar reporte</button></div><div id="pl"></div><textarea id="jx" rows="5" placeholder="Aquí aparece el JSON exportado; pega uno aquí para importar"></textarea><p id="pm" class="mut"></p></div><div class="card" id="rp" hidden></div></div>
+<footer>Este resultado es una estimación / cálculo técnico y debe ser validado por un profesional competente antes de ejecutarse en obra. Los requisitos normativos (presiones mínimas, diámetros, velocidades) deben verificarse contra la normativa aplicable al proyecto.</footer>
+<script>
+const G=9.81,$=s=>document.querySelector(s),svg=$('#cv');
+const MAT={
+PVC:{n:'PVC hidráulico (cd 40)',e:.0015,id:{'1/2"':15.8,'3/4"':20.9,'1"':26.6,'1 1/4"':35.1},wall:[2.77,2.87,3.4,3.55],E:3,rate:[41,33,31,25],tmax:60,der:[[23,1],[27,.88],[32,.75],[38,.62],[43,.51],[49,.4],[60,.22]],cost:'$',nota:'Solo agua fría. Ligero, barato, fácil de pegar. Se degrada con el sol (UV) y pierde resistencia con el calor.'},
+CPVC:{n:'CPVC (CTS)',e:.0015,id:{'1/2"':13.0,'3/4"':18.2,'1"':23.4,'1 1/4"':28.6},wall:[1.45,2.0,2.6,3.15],E:2.9,rate:[27,27,27,27],tmax:82,der:[[23,1],[38,.9],[49,.75],[60,.62],[71,.47],[82,.25]],cost:'$$',nota:'Agua fría y caliente (hasta 82 °C). No se corroe. Resistencia media; juntas con cemento solvente.'},
+CU:{n:'Cobre tipo M',e:.0015,id:{'1/2"':14.5,'3/4"':20.5,'1"':26.4,'1 1/4"':32.4},wall:[.69,.86,1.09,1.26],E:117,rate:[20,20,20,20],tmax:100,der:[[20,1],[100,.9]],cost:'$$$',nota:'Agua fría y caliente. Muy resistente y duradero, pero caro; al ser rígido da golpes de ariete más fuertes y se pica con aguas agresivas o V > 2 m/s.'},
+FG:{n:'Fierro galvanizado',e:.15,id:{'1/2"':15.8,'3/4"':20.9,'1"':26.6,'1 1/4"':35.1},wall:[2.77,2.87,3.4,3.55],E:200,rate:[25,25,25,25],tmax:100,der:[[20,1],[100,.9]],cost:'$$',nota:'Muy resistente mecánicamente, pero se oxida e incrusta con los años (sube la rugosidad y baja el diámetro útil; aquí se usa tubo nuevo). Pesado, juntas roscadas.'}};
+const SZ=['1/2"','3/4"','1"','1 1/4"','1 1/2"','2"'];
+[['PVC',[40.9,52.5],[3.68,3.91],[22,19]],['CPVC',[33.8,44.1],[3.76,4.9],[27,27]],['CU',[38.5,50.7],[1.4,1.65],[20,20]],['FG',[40.9,52.5],[3.68,3.91],[25,25]]].forEach(([k,i,w,r])=>{MAT[k].id['1 1/2"']=i[0];MAT[k].id['2"']=i[1];MAT[k].wall.push(...w);MAT[k].rate.push(...r)});
+const VAL={0:['Sin válvula',0],esf:['Llave de esfera',.1],comp:['Compuerta',.2],glo:['Globo',10]};
+const END={'':'Ninguno',wc:'WC',lav:'Lavabo'};
+let nodes,pipes,nid,pid,sel,mode='sel',draw=null,drag=null,cur=null,P;
+const nu=()=>1.79e-6/(1+.0337*P.T+.000221*P.T*P.T);
+const lvl=()=>Math.min(P.th,P.vol/P.cap*P.th),Dt=()=>Math.sqrt(4*P.cap/1000/(Math.PI*P.th));
+function derate(m,T){const d=m.der;if(T<=d[0][0])return d[0][1];for(let i=1;i<d.length;i++)if(T<=d[i][0])return d[i-1][1]+(d[i][1]-d[i-1][1])*(T-d[i-1][0])/(d[i][0]-d[i-1][0]);return 0}
+function strength(p,res){const m=MAT[p.mat],i=SZ.indexOf(p.sz),e=m.wall[i]/1000,D=m.id[p.sz]/1000,r=res[p.id],Hs=H0();
+ const st=Math.max(Hs-nodes[p.from].z,Hs-nodes[p.to].z),a=1/Math.sqrt(1000*(1/2.2e9+D/(m.E*1e9*e))),dh=a*r.v/G,rate=m.rate[i]*derate(m,P.T),tot=(st+dh)*.0980665;
+ return{e,od:D*1000+2*e*1000,a,dh,st,rate,tot,u:rate>0?tot/rate:Infinity,tok:P.T<=m.tmax}}
+function evalMat(k){const bak=pipes;pipes=bak.map(p=>({...p,mat:k}));const a=all();let marg=Infinity,u=0;
+ pipes.forEach(p=>{if(p.end)marg=Math.min(marg,a.res[p.id].p-pmin(p));u=Math.max(u,strength(p,a.res).u)});pipes=bak;return{marg,u}}
+const X=x=>30+x*70,Y=z=>480-z*70,r3=v=>Math.round(v*1000)/1000;
+const len=p=>Math.hypot(nodes[p.to].x-nodes[p.from].x,nodes[p.to].z-nodes[p.from].z);
+const ang=p=>Math.atan2(nodes[p.to].z-nodes[p.from].z,nodes[p.to].x-nodes[p.from].x)*180/Math.PI;
+function add(f,x,z,sz,mat,end,valve){nodes[nid]={x,z};pipes.push({id:pid,from:f,to:nid,sz,mat,valve:valve||0,end:end||''});nid++;return pid++}
+function init(){nodes={0:{x:1.5,z:3.2}};pipes=[];nid=1;pid=1;
+ P={cap:1100,vol:750,th:1.2,qwc:.1,qlav:.15,pwc:2,plav:2,T:20,boost:0};
+ add(0,1.5,.9,'3/4"','PVC','','esf');add(1,4.5,.9,'3/4"','PVC');add(2,4.5,.3,'1/2"','PVC','wc');add(2,6.2,.9,'1/2"','PVC','lav');
+ sel=1;draw=null;gpanel();render()}
+function setMode(m){mode=m;draw=null;$('#m1').className=m=='sel'?'on':'';$('#m2').className=m=='dib'?'on':'';render()}
+const kidsOf=()=>{const k={};pipes.forEach(p=>(k[p.from]=k[p.from]||[]).push(p));return k};
+function sub(n){let s=[n];pipes.filter(p=>p.from==n).forEach(p=>s=s.concat(sub(p.to)));return s}
+function moveSub(n,dx,dz){sub(n).forEach(i=>{nodes[i].x=r3(nodes[i].x+dx);nodes[i].z=r3(nodes[i].z+dz)})}
+function demand(){const k=kidsOf(),q={};
+ const f=p=>{let s=p.end=='wc'?P.qwc:p.end=='lav'?P.qlav:0;(k[p.to]||[]).forEach(c=>s+=f(c));return q[p.id]=s};
+ (k[0]||[]).forEach(f);return q}
+function loss(p,Q,k){const m=MAT[p.mat],D=m.id[p.sz]/1000,A=Math.PI*D*D/4,v=Q/A,L=len(p),Re=v*D/nu();let f=0;
+ if(Re>0)f=Re<2300?64/Re:.25/Math.pow(Math.log10(m.e/1000/(3.7*D)+5.74/Math.pow(Re,.9)),2);
+ const hf=f*L/D*v*v/2/G;let K=VAL[p.valve][1];if(p.from==0)K+=.5;
+ if((k[p.from]||[]).length>1)K+=1;else{const par=pipes.find(q=>q.to==p.from);if(par){const d=Math.abs(((ang(p)-ang(par)+540)%360)-180);K+=d>=67.5?.9:d>=22.5?.4:0}}
+ return{v,Re,f,hf,hm:K*v*v/2/G,K,D,L}}
+function solve(qm){const k=kidsOf(),res={},H={0:H0()},Hs=H[0];
+ const go=n=>(k[n]||[]).forEach(p=>{const r=loss(p,qm[p.id]||0,k);H[p.to]=H[n]-r.hf-r.hm;r.H=H[p.to];r.p=r.H-nodes[p.to].z-r.v*r.v/2/G;r.st=Hs-nodes[p.to].z;res[p.id]=r;go(p.to)});
+ go(0);return res}
+function qmax(p,pmin){const ch=[];let c=p;while(c){ch.push(c);c=pipes.find(q=>q.to==c.from)}
+ const pr=q=>{const m={};ch.forEach(x=>m[x.id]=q/1000);return solve(m)[p.id].p};
+ if(pr(0)<pmin)return 0;if(pr(5)>=pmin)return Infinity;let lo=0,hi=5;
+ for(let i=0;i<40;i++){const mid=(lo+hi)/2;pr(mid)>=pmin?lo=mid:hi=mid}return lo}
+const cls=v=>v<.01?'c-0':v<=2.5?(v<.3?'c-warn':'c-ok'):v<=3?'c-warn':'c-bad';
+const pmin=p=>p.end=='wc'?P.pwc:P.plav;
+function all(){const dem=demand(),qm={};for(const i in dem)qm[i]=dem[i]/1000;return{dem,res:solve(qm)}}
+function render(){const a=all();drawSvg(a.res,a.dem);results(a.res,a.dem);matCard();updPS(a);tinfo();diagR(a)}
+function tinfo(){const el=$('#ti');if(!el)return;const qt=pipes.filter(p=>p.end).reduce((t,p)=>t+(p.end=='wc'?P.qwc:P.qlav),0);
+ el.innerHTML=`Ø interior ≈ ${Dt().toFixed(2)} m · nivel ${lvl().toFixed(2)} m (${(P.vol/P.cap*100).toFixed(0)} % lleno)${qt>0?' · con todos los muebles abiertos el agua dura ~'+(P.vol/qt/60).toFixed(0)+' min':''}`}
+function updPS(a){const el=$('#ps'),p=pipes.find(q=>q.id==sel);if(!el||!p)return;const m=MAT[p.mat],s=strength(p,a.res),bar=x=>(x*.0980665).toFixed(2);
+ const c=!s.tok||s.u>1?'bad':s.u>.8?'warn':'ok',msg=!s.tok?`${m.n} no soporta ${P.T} °C (máx. ${m.tmax} °C).`:s.u>1?'La presión máxima excede la admisible: usa un material/diámetro más resistente o cierres lentos.':s.u>.8?'Poco margen de seguridad.':'Resistencia adecuada.';
+ el.innerHTML=`<p style="margin:12px 0 4px"><b>Resistencia · ${m.n} ${p.sz}</b><br><span class="mut" style="font-size:12px">Ø int ${m.id[p.sz]} mm · Ø ext ${s.od.toFixed(1)} mm · pared ${(s.e*1000).toFixed(2)} mm</span></p>
+ <table><tr><td>Presión admisible a ${P.T} °C<td>${s.rate.toFixed(1)} bar</tr><tr><td>Presión estática máx. del tubo<td>${bar(s.st)} bar</tr><tr><td>Golpe de ariete, cierre brusco (a = ${s.a.toFixed(0)} m/s)<td>+${bar(s.dh)} bar</tr>
+ <tr><td><b>Presión máxima total</b><td><b class="${c}">${bar(s.st+s.dh)} bar${s.tok?' ('+(s.u*100).toFixed(0)+' %)':''}</b></tr></table><p class="${c}" style="margin:6px 0 0;font-size:12.5px">${msg}</p><p class="mut" style="margin:4px 0 0;font-size:12px">${m.nota}</p>`}
+function matCard(){let h='<table><tr><th>Material<th>P adm. ¾″ (bar)<th>T máx<th>Costo<th>Margen (mca)<th>Uso resist.<th></tr>';
+ for(const k in MAT){const m=MAT[k],e=evalMat(k),tok=P.T<=m.tmax,cur=pipes.length&&pipes.every(p=>p.mat==k),ok=tok&&e.u<=1&&e.marg>=0;
+  h+=`<tr style="${cur?'font-weight:700':''}"><td>${m.n}${cur?' ◀':''}<td>${(m.rate[1]*derate(m,P.T)).toFixed(0)}<td>${m.tmax} °C<td>${m.cost}<td class="${e.marg>=0?'ok':'bad'}">${e.marg===Infinity?'—':e.marg.toFixed(2)}<td class="${!tok||e.u>1?'bad':e.u>.8?'warn':'ok'}">${tok?(e.u*100).toFixed(0)+' %':'✗ T'}<td><button onclick="useMat('${k}')" style="padding:2px 8px">Usar</button></tr><tr><td colspan="7" style="text-align:left;font-size:11.5px;color:var(--mut)"><b class="${ok?'ok':'bad'}">${ok?'✓':'✗'}</b> ${m.nota}</tr>`}
+ $('#mc').innerHTML=h+'</table>'}
+function useMat(k){pipes.forEach(p=>p.mat=k);ppanel();render()}
+
+function drawSvg(res,dem){let s='';
+ for(let i=0;i<=12;i+=.5){s+=`<line x1="${X(i)}" y1="${Y(0)}" x2="${X(i)}" y2="${Y(6.5)}" class="${i%1?'g1':'g2'}"/>`;if(i%1==0)s+=`<text x="${X(i)}" y="${Y(0)+24}" class="ax" text-anchor="middle">${i} m</text>`}
+ for(let j=0;j<=6.5;j+=.5){s+=`<line x1="${X(0)}" y1="${Y(j)}" x2="${X(12)}" y2="${Y(j)}" class="${j%1?'g1':'g2'}"/>`;if(j%1==0)s+=`<text x="26" y="${Y(j)+3}" class="ax" text-anchor="end">z=${j}</text>`}
+ s+=`<rect x="30" y="480" width="840" height="30" class="gr" opacity=".5"/><text x="${X(.1)}" y="500" class="ax">Piso (z = 0)</text>`;
+ const t=nodes[0],tx=X(t.x),hw=Dt()*35,L0=lvl();
+ s+=`<rect x="${tx-hw-24}" y="${Y(t.z)}" width="${hw*2+48}" height="7" class="sl" rx="2"/>`;
+ s+=`<g data-n="0" style="cursor:move"><rect x="${tx-hw}" y="${Y(t.z+P.th)}" width="${hw*2}" height="${P.th*70}" rx="14" fill="none" stroke="var(--fg)" stroke-width="2"/>
+ <rect x="${tx-hw+1}" y="${Y(t.z+L0)}" width="${hw*2-2}" height="${Math.max(0,L0*70-1)}" rx="13" fill="var(--water)" opacity=".75"/>
+ <line x1="${tx-hw+1}" x2="${tx+hw-1}" y1="${Y(t.z+L0)}" y2="${Y(t.z+L0)}" stroke="var(--acc)" stroke-dasharray="4 3"/>
+ <text x="${tx}" y="${Y(t.z+P.th)-6}" text-anchor="middle" class="lb">Tinaco ${P.cap} L · agua ${P.vol.toFixed(0)} L · z=${t.z.toFixed(2)}</text><circle cx="${tx}" cy="${Y(t.z)}" r="7" fill="var(--acc)"/></g>`;
+ pipes.forEach(p=>{const a=nodes[p.from],b=nodes[p.to],x1=X(a.x),y1=Y(a.z),x2=X(b.x),y2=Y(b.z),r=res[p.id],Q=dem[p.id],sw=Math.max(5,MAT[p.mat].id[p.sz]/2.4);
+  if(p.id==sel)s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--acc)" stroke-width="${sw+8}" stroke-linecap="round" opacity=".28"/>`;
+  s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${cls(r.v)}" stroke-width="${sw}" stroke-linecap="round"/>`;
+  if(Q>0)s+=`<line class="fl" style="animation-duration:${(1.2/Math.max(.3,Math.min(r.v,3))).toFixed(2)}s" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+  s+=`<line data-p="${p.id}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="transparent" stroke-width="18" style="cursor:pointer"/>`;
+  let nx=-(y2-y1),ny=x2-x1,l=Math.hypot(nx,ny)||1;nx/=l;ny/=l;if(ny>0||(ny==0&&nx<0)){nx=-nx;ny=-ny}
+  const mx=(x1+x2)/2+nx*(sw/2+10),my=(y1+y2)/2+ny*(sw/2+10),an=nx>.5?'start':nx<-.5?'end':'middle';
+  s+=`<text x="${mx}" y="${my-(ny<-.5?13:0)}" text-anchor="${an}" class="lb">T${p.id} · ${p.sz} · ${r.L.toFixed(2)} m · ${ang(p).toFixed(0)}°</text><text x="${mx}" y="${my+(ny<-.5?0:13)}" text-anchor="${an}" class="lb lb2">${Q.toFixed(2)} L/s · ${r.v.toFixed(2)} m/s</text>`});
+ for(const id in nodes)if(id!=0)s+=`<circle data-n="${id}" cx="${X(nodes[id].x)}" cy="${Y(nodes[id].z)}" r="6" fill="var(--card)" stroke="var(--acc)" stroke-width="2" style="cursor:${mode=='dib'?'crosshair':'move'}"/>`;
+ pipes.filter(p=>p.end).forEach(p=>{const b=nodes[p.to],x=X(b.x),y=Y(b.z),r=res[p.id],ok=r.p>=pmin(p);
+  s+=p.end=='lav'?`<g transform="translate(${x},${y})" fill="none" stroke="var(--fg)" stroke-width="2"><path d="M8 -4 h38 l-7 16 h-24z"/><path d="M12 -4 v-12 h10"/></g>`:
+   `<g transform="translate(${x},${y})" fill="none" stroke="var(--fg)" stroke-width="2"><rect x="8" y="-34" width="14" height="22" rx="2"/><path d="M8 -12 h40 q0 18 -16 18 h-8 q-16 0 -16 -18z"/></g>`;
+  s+=`<text x="${x+10}" y="${y+(p.end=='lav'?30:30)}" class="lb ${ok?'ok':'bad'}" style="fill:var(--${ok?'ok':'bad'});font-weight:700">${END[p.end]}: ${r.p.toFixed(2)} mca ${ok?'✓':'✗'}</text>`});
+ if(draw&&cur){const a=nodes[draw.from],q=snap(cur,a),dx=q.x-a.x,dz=q.z-a.z;
+  s+=`<line x1="${X(a.x)}" y1="${Y(a.z)}" x2="${X(q.x)}" y2="${Y(q.z)}" stroke="var(--acc)" stroke-width="3" stroke-dasharray="6 4"/><text x="${X(q.x)+8}" y="${Y(q.z)-8}" class="lb">${Math.hypot(dx,dz).toFixed(2)} m · ${(Math.atan2(dz,dx)*180/Math.PI).toFixed(0)}°</text>`}
+ svg.innerHTML=s}
+function fmt(v){return v===Infinity?'> 5':v.toFixed(2)}
+function results(res,dem){const Hs=H0();let h='';
+ pipes.filter(p=>p.end).forEach(p=>{const r=res[p.id],m=pmin(p),ok=r.p>=m,qx=qmax(p,m),z=nodes[p.to].z;
+  h+=`<div class="fx"><b>${END[p.end]}</b> (T${p.id}) · z = ${z.toFixed(2)} m<br>Presión estática: ${r.st.toFixed(2)} mca<br>Presión residual con flujo: <b class="${ok?'ok':'bad'}">${r.p.toFixed(2)} mca</b> (mín. ${m})<br>Q demandado ${dem[p.id].toFixed(2)} L/s · Q máx. aislado: ${fmt(qx)} L/s<br><span class="${ok?'ok':'bad'}">${r.p<0?'Presión negativa: el tubo no se llena / succiona aire.':ok?'Presión suficiente.':'Presión insuficiente: sube el tinaco, engrosa el tubo o reduce codos/válvulas.'}</span></div>`});
+ $('#rf').innerHTML=(h||'<p class="mut">Asigna “WC” o “Lavabo” al extremo de un tubo.</p>')+`<p class="mut" style="margin:4px 0 0">Carga en el tinaco: H = ${Hs.toFixed(2)} m</p>`;
+ let t='<table><tr><th>Tubo<th>Ø<th>L m<th>Q L/s<th>V m/s<th>Re<th>f<th>hf<th>hm<th>p fin</tr>';
+ pipes.forEach(p=>{const r=res[p.id];t+=`<tr onclick="selP(${p.id})" style="cursor:pointer;${p.id==sel?'font-weight:700':''}"><td>T${p.id}<td>${p.sz}<td>${r.L.toFixed(2)}<td>${dem[p.id].toFixed(2)}<td class="${r.v>3?'bad':r.v>2.5?'warn':''}">${r.v.toFixed(2)}<td>${r.Re.toFixed(0)}<td>${r.f.toFixed(4)}<td>${r.hf.toFixed(3)}<td>${r.hm.toFixed(3)}<td class="${r.p<0?'bad':''}">${r.p.toFixed(2)}</tr>`});
+ $('#rt').innerHTML=t+'</table><p class="mut" style="margin:4px 0 0;font-size:11.5px">hf, hm y p en metros de columna de agua (mca).</p>'}
+const PRE={450:.95,600:1.05,750:1.1,1100:1.2,2500:1.5};
+function gpanel(){const f=[['Capacidad del tinaco (L)','cap',P.cap,10],['Agua contenida (L)','vol',P.vol,10],['Altura del tinaco (m)','th',P.th,.05],['Elevación base z (m)','z',nodes[0].z,.05],['Q WC (L/s)','qwc',P.qwc,.01],['Q lavabo (L/s)','qlav',P.qlav,.01],['Presión mín. WC (mca)','pwc',P.pwc,.1],['Presión mín. lavabo (mca)','plav',P.plav,.1],['Temperatura del agua (°C)','T',P.T,1],['Carga de bomba/presurizador (mca)','boost',P.boost,.5]];
+ $('#gp').innerHTML='<label style="grid-column:1/-1">Tinaco comercial<select onchange="preset(this.value)"><option value="">Personalizado</option>'+Object.keys(PRE).map(c=>`<option value="${c}" ${c==P.cap?'selected':''}>${c} L</option>`).join('')+'</select></label>'+f.map(a=>`<label>${a[0]}<input type="number" step="${a[3]}" min="0" value="${a[2]}" onchange="sg('${a[1]}',+this.value)"></label>`).join('')+'<div id="ti" style="grid-column:1/-1;font-size:12px;color:var(--mut)"></div>'}
+function preset(c){if(!c)return;P.cap=+c;P.th=PRE[c];P.vol=Math.min(P.vol,P.cap);gpanel();render();ppanel()}
+function sg(k,v){if(k=='z')nodes[0].z=Math.max(0,v);else P[k]=v;P.cap=Math.max(50,P.cap);P.th=Math.max(.3,P.th);P.vol=Math.max(0,Math.min(P.vol,P.cap));P.T=Math.max(1,Math.min(95,P.T));P.boost=Math.max(0,P.boost||0);gpanel();render();ppanel()}
+const opt=(o,c)=>o.map(([v,n])=>`<option value="${v}" ${v==c?'selected':''}>${n}</option>`).join('');
+function ppanel(){const p=pipes.find(q=>q.id==sel),el=$('#pp');
+ if(!p){el.innerHTML='<h3>Tubo</h3><p class="mut">Selecciona un tubo (clic sobre él) para editar material, diámetro, longitud, ángulo, válvula o muebles.</p>';return}
+ el.innerHTML=`<h3>Tubo T${p.id}</h3><div class="g2c">
+ <label>Material<select onchange="sp('mat',this.value)">${opt(Object.keys(MAT).map(k=>[k,MAT[k].n]),p.mat)}</select></label>
+ <label>Diámetro nominal<select onchange="sp('sz',this.value)">${opt(SZ.map(s=>[s,s+' (int. '+MAT[p.mat].id[s]+' mm)']),p.sz)}</select></label>
+ <label>Longitud (m)<input type="number" id="lg" step=".05" min=".1" value="${len(p).toFixed(2)}" onchange="geo()"></label>
+ <label>Ángulo (°) 0=→ 90=↑ −90=↓<input type="number" id="an" step="5" value="${ang(p).toFixed(1)}" onchange="geo()"></label>
+ <label>Válvula<select onchange="sp('valve',this.value)">${opt(Object.keys(VAL).map(k=>[k,VAL[k][0]]),p.valve)}</select></label>
+ <label>Extremo del tubo<select onchange="sp('end',this.value)">${opt(Object.keys(END).map(k=>[k,END[k]]),p.end)}</select></label></div>
+ <div class="tb" style="margin:8px 0 0"><button class="dg" onclick="delP()">🗑 Borrar tubo y ramales</button></div><div id="ps"></div>`;updPS(all())}
+function sp(k,v){const p=pipes.find(q=>q.id==sel);p[k]=v;ppanel();render()}
+function geo(){const p=pipes.find(q=>q.id==sel),L=Math.max(.1,+$('#lg').value),a=+$('#an').value*Math.PI/180,f=nodes[p.from],b=nodes[p.to];
+ moveSub(p.to,r3(f.x+L*Math.cos(a)-b.x),r3(f.z+L*Math.sin(a)-b.z));ppanel();render()}
+function delP(){const p=pipes.find(q=>q.id==sel),ids=sub(p.to);pipes=pipes.filter(q=>q.id!=p.id&&!ids.includes(q.from));ids.forEach(i=>delete nodes[i]);sel=null;ppanel();render()}
+function selP(i){sel=i;ppanel();render()}
+function pt(e){const r=svg.getBoundingClientRect();return{x:((e.clientX-r.left)/r.width*880-30)/70,z:(480-(e.clientY-r.top)/r.height*520)/70}}
+function snap(w,f){let x=Math.round(w.x/.05)*.05,z=Math.round(w.z/.05)*.05;
+ if(f&&$('#sa').checked){const dx=w.x-f.x,dz=w.z-f.z,L=Math.round(Math.hypot(dx,dz)/.05)*.05,a=Math.round(Math.atan2(dz,dx)*12/Math.PI)*Math.PI/12;x=f.x+L*Math.cos(a);z=f.z+L*Math.sin(a)}
+ return{x:r3(Math.max(0,Math.min(12,x))),z:r3(Math.max(0,Math.min(6.5,z)))}}
+svg.addEventListener('pointerdown',e=>{const n=e.target.closest('[data-n]'),p=e.target.closest('[data-p]'),w=pt(e);
+ if(mode=='dib'){if(n&&n.dataset.n!=0){draw={from:+n.dataset.n};cur=w;render()}else if(draw){const a=nodes[draw.from],q=snap(w,a);if(Math.hypot(q.x-a.x,q.z-a.z)>=.1){const par=pipes.find(x=>x.to==draw.from)||{sz:'3/4"',mat:'PVC'};
+   const id=add(draw.from,q.x,q.z,par.sz,par.mat);draw={from:nid-1};sel=id;ppanel()}render()}return}
+ if(n){drag=+n.dataset.n;svg.setPointerCapture(e.pointerId);const pp=pipes.find(x=>x.to==drag);if(pp){sel=pp.id;ppanel()}render()}
+ else if(p)selP(+p.dataset.p);else{sel=null;ppanel();render()}});
+svg.addEventListener('pointermove',e=>{cur=pt(e);if(drag!==null){const pp=pipes.find(x=>x.to==drag),q=snap(cur,pp?nodes[pp.from]:null),o=nodes[drag];
+  if(drag==0){o.x=q.x;o.z=q.z;gpanel()}else moveSub(drag,r3(q.x-o.x),r3(q.z-o.z));render()}else if(draw)render()});
+svg.addEventListener('pointerup',()=>{if(drag!==null){drag=null;ppanel()}});
+addEventListener('keydown',e=>{if(e.key=='Escape'){draw=null;render()}});
+/* ===== v2 ===== */
+const H0=()=>nodes[0].z+lvl()+P.boost;
+let PR={},BG={w:10,lab:30,util:15,iva:16};
+const esc=t=>String(t).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+const fx=(x,d=4)=>isFinite(x)?String(+x.toPrecision(d)):'—';
+const nuT=T=>1.79e-6/(1+.0337*T+.000221*T*T);
+function cole(Re,e,D){if(!(Re>0))return 0;if(Re<2300)return 64/Re;let f=.25/Math.pow(Math.log10(e/(3.7*D)+5.74/Math.pow(Re,.9)),2);for(let i=0;i<30;i++)f=Math.pow(-2*Math.log10(e/(3.7*D)+2.51/(Re*Math.sqrt(f))),-2);return f}
+const reg=Re=>Re<2300?'laminar':Re<4000?'transición (incierto)':'turbulento';
+function form(el,F,cb){el.innerHTML='<div class="g2c">'+F.map(f=>`<label>${f[1]}${Array.isArray(f[3])?`<select data-k="${f[0]}">${f[3].map(o=>`<option value="${o[0]}" ${o[0]==f[2]?'selected':''}>${o[1]}</option>`).join('')}</select>`:`<input type="number" step="any" data-k="${f[0]}" value="${f[2]}">`}</label>`).join('')+'</div>';el.oninput=cb;el.onchange=cb}
+function vals(el){const v={};el.querySelectorAll('[data-k]').forEach(i=>v[i.dataset.k]=i.tagName=='SELECT'?i.value:parseFloat(i.value));return v}
+const setv=(el,k,x)=>{el.querySelector('[data-k='+k+']').value=x};
+const A_=D=>Math.PI*D*D/4;
+const CALC=[
+{n:'Caudal, velocidad y área',F:[['Q','Caudal Q (L/s)',.25],['D','Diámetro interior D (mm)',20.9]],f:'A = πD²/4 · v = Q/A · Q = V/t',
+ o:v=>{const A=A_(v.D/1000),V=v.Q/1000/A;return{r:[['Área A',fx(A*1e4),'cm²'],['Velocidad v',fx(V),'m/s']],m:V>3?'🔴 Velocidad muy alta: ruido, erosión y golpe de ariete.':V>2.5?'🟡 Velocidad alta; revisa tu criterio.':V<.3?'🟡 Velocidad muy baja.':'🟢 Velocidad en rango usual (0.3–2.5 m/s; criterio configurable).'}},
+ tip:'Si el tubo silba o vibra, casi siempre es velocidad alta: sube un diámetro.',que:'Por continuidad, el mismo caudal pasa más rápido en un tubo más delgado.'},
+{n:'Tinaco: tiempo de llenado / vaciado',F:[['cap','Capacidad (L)',1100],['vol','Agua actual (L)',200],['qi','Q de entrada (L/s)',.2],['qo','Q de consumo (L/s)',.1]],f:'t = V / (Qentrada − Qconsumo)',
+ o:v=>{const n=v.qi-v.qo;return{r:[['Llenado hasta capacidad',n>0?fx((v.cap-v.vol)/n/60):'—','min'],['Vaciado sin entrada',fx(v.vol/v.qo/60),'min']],m:n>0?'🟢 El tinaco se llena con ese consumo.':'🟡 La entrada no supera el consumo: el tinaco no se llena.'}},
+ tip:'Calcula con el caudal real de la toma (mídelo con cubeta y cronómetro).',que:'Volumen entre caudal neto = tiempo.'},
+{n:'Reynolds y factor de fricción',F:[['D','D interior (mm)',20.9],['v','Velocidad (m/s)',1.5],['T','Temperatura (°C)',20],['e','Rugosidad ε (mm)',.0015]],f:'Re = vD/ν · f = 64/Re (laminar) · Colebrook-White (turbulento)',
+ o:v=>{const D=v.D/1000,Re=v.v*D/nuT(v.T),f=cole(Re,v.e/1000,D);return{r:[['Reynolds',fx(Re,5),''],['Régimen',reg(Re),''],['Factor f',fx(f,4),''],['Rugosidad relativa ε/D',fx(v.e/v.D,3),'']],m:Re>=2300&&Re<4000?'🟡 Zona de transición: f incierto.':'🟢 Régimen '+reg(Re)+'.'}},
+ tip:'En instalaciones domésticas el flujo casi siempre es turbulento.',que:'Re compara fuerzas de inercia y viscosas; decide qué fórmula de fricción usar.'},
+{n:'Pérdida de carga (Darcy y Hazen-Williams)',F:[['Q','Caudal (L/s)',.25],['D','D interior (mm)',20.9],['L','Longitud (m)',15],['e','Rugosidad ε (mm)',.0015],['C','C Hazen-Williams',150],['T','Temperatura (°C)',20]],f:'hf = f(L/D)(v²/2g) · hf = 10.67·L·Q¹·⁸⁵²/(C¹·⁸⁵²·D⁴·⁸⁷) (SI)',
+ o:v=>{const D=v.D/1000,Q=v.Q/1000,V=Q/A_(D),Re=V*D/nuT(v.T),f=cole(Re,v.e/1000,D),hd=f*v.L/D*V*V/2/G,hh=10.67*v.L*Math.pow(Q,1.852)/(Math.pow(v.C,1.852)*Math.pow(D,4.87));return{r:[['Velocidad',fx(V),'m/s'],['Reynolds',fx(Re,5),''],['f',fx(f,4),''],['hf Darcy-Weisbach',fx(hd),'m'],['hf Hazen-Williams',fx(hh),'m'],['Gradiente (Darcy)',fx(hd/v.L*100),'m/100 m']],m:'Hazen-Williams es empírico (agua turbulenta, ~50–1800 mm); Darcy es el método general. Diferencia: '+fx(Math.abs(hd-hh)/hd*100,3)+' %.'}},
+ tip:'La pérdida crece con la longitud y se dispara al reducir el diámetro (≈ 1/D⁵).',que:'Es la presión que el agua gasta venciendo la fricción de la pared.'},
+{n:'Presión hidrostática',F:[['h','Altura de agua h (m)',5],['rho','Densidad (kg/m³)',1000]],f:'P = ρ·g·h',
+ o:v=>{const P=v.rho*9.80665*v.h;return{r:[['Presión',fx(P/1000),'kPa'],['',fx(P/1e5),'bar'],['',fx(P/6894.757),'psi'],['',fx(P/98066.5),'kgf/cm²'],['Columna de agua',fx(P/9806.65),'m.c.a.']],m:'Cada 10 m de agua ≈ 1 bar ≈ 1 kgf/cm².'}},
+ tip:'Un tinaco 5 m arriba da ~0.5 kgf/cm²: poca presión, por eso importan las pérdidas.',que:'La presión depende solo de la altura vertical, no de la forma del tanque.'},
+{n:'Pendiente (deja en 0 lo que quieras calcular)',F:[['L','Longitud (m)',10],['dh','Desnivel (m)',0],['p','Pendiente (%)',2]],f:'Pendiente = Δh / L',
+ o:v=>{let{L,dh,p}=v;if(p>0&&dh==0)dh=L*p/100;else if(p==0&&dh>0)p=dh/L*100;else if(L==0&&p>0)L=dh/(p/100);return{r:[['Longitud',fx(L),'m'],['Desnivel',fx(dh),'m'],['Pendiente',fx(p),'%'],['Ángulo',fx(Math.atan(p/100)*180/Math.PI),'°']],m:fx(p,3)+' % = '+fx(p,3)+' cm por cada metro.'}},
+ tip:'Drenaje: pendiente constante, sin contrapendientes.',que:'2 % significa bajar 2 cm por cada metro de tubo.'},
+{n:'Bomba: potencia',F:[['Q','Caudal (L/s)',1],['H','Altura dinámica total (m)',25],['n','Eficiencia (%)',55]],f:'Phid = ρgQH · Pmotor = Phid/η',
+ o:v=>{const ph=1000*9.80665*v.Q/1000*v.H,pm=ph/(v.n/100);return{r:[['Potencia hidráulica',fx(ph/1000),'kW'],['Potencia en el eje',fx(pm/1000),'kW'],['',fx(pm/745.7),'HP']],m:'🟡 Estimación preliminar: elige el motor comercial inmediato superior y verifica con la curva real del fabricante.'}},
+ tip:'Suma altura estática + pérdidas (+ presión requerida) para obtener H.',que:'Potencia = peso de agua elevada por segundo × altura, entre la eficiencia.'},
+{n:'Golpe de ariete',F:[['v','Velocidad (m/s)',1.5],['L','Longitud (m)',20],['D','D interior (mm)',20.9],['e','Espesor pared (mm)',2.87],['E','Módulo E (GPa) PVC≈3, Cu≈117',3],['t','Tiempo de cierre (s)',.5]],f:'a = 1/√[ρ(1/K + D/(E·e))] · ΔH = a·v/g (rápido) · ΔH = 2Lv/(g·t) (lento)',
+ o:v=>{const a=1/Math.sqrt(1000*(1/2.2e9+v.D/1000/(v.E*1e9*v.e/1000))),tc=2*v.L/a,fast=v.t<=tc,dh=fast?a*v.v/G:2*v.L*v.v/(G*v.t);return{r:[['Velocidad de onda a',fx(a,4),'m/s'],['Tiempo crítico 2L/a',fx(tc),'s'],['Sobrepresión ΔH',fx(dh),'m'],['Sobrepresión',fx(dh*.0980665),'bar']],m:(fast?'🔴 Cierre rápido (Joukowsky).':'🟢 Cierre lento (Michaud).')+' El análisis detallado de golpe de ariete requiere datos específicos del sistema y puede requerir software especializado.'}},
+ tip:'Cierra llaves despacio y usa cámaras de aire en tramos largos.',que:'Detener el agua de golpe convierte su energía cinética en un pico de presión.'},
+{n:'NPSH disponible (cavitación)',F:[['pa','Presión atmosférica (m.c.a.)',10.33],['T','Temperatura (°C)',20],['z','Altura de succión z (+ si el agua está arriba) (m)',2],['hf','Pérdidas en succión (m)',.5],['nr','NPSH requerido (m)',3]],f:'NPSHd = Patm/γ + z − hf − Pvap/γ (Pvap por Antoine, 1–100 °C)',
+ o:v=>{const hv=Math.pow(10,8.07131-1730.63/(233.426+v.T))*.01359,d=v.pa+v.z-v.hf-hv,m=d-v.nr;return{r:[['Pvap del agua',fx(hv),'m.c.a.'],['NPSH disponible',fx(d),'m'],['Margen',fx(m),'m']],m:m<0?'🔴 Riesgo de cavitación: NPSHd < NPSHr.':m<.5?'🟡 Margen bajo; recomendable ≥ 0.5 m.':'🟢 Sin riesgo de cavitación para estos datos.'}},
+ tip:'Bomba lejos y arriba del agua = problema: acércala, engrosa la succión.',que:'Si la presión cae bajo la de vapor, el agua hierve en la bomba y la daña.'},
+{n:'Agua caliente: energía y tiempo',F:[['V','Volumen (L)',150],['t1','T entrada (°C)',20],['t2','T salida (°C)',55],['P','Potencia del calentador (kW)',3]],f:'Q = m·Cp·ΔT (Cp = 4.186 kJ/kg·K)',
+ o:v=>{const E=v.V*4.186*(v.t2-v.t1),kwh=E/3600;return{r:[['Energía',fx(E),'kJ'],['',fx(kwh),'kWh'],['Tiempo de calentamiento',fx(kwh/v.P*60),'min']],m:'No incluye pérdidas del tanque ni de las tuberías.'}},
+ tip:'Aísla las tuberías de agua caliente para no perder temperatura.',que:'Calor necesario = masa × calor específico × diferencia de temperatura.'}];
+let cs=0;
+function calcInit(){$('#cs').innerHTML=CALC.map((c,i)=>`<option value="${i}">${c.n}</option>`).join('');calcDraw()}
+function calcDraw(){cs=+$('#cs').value;form($('#cf'),CALC[cs].F,calcRun);calcRun()}
+function calcRun(){const c=CALC[cs],v=vals($('#cf'));let h;
+ if(Object.values(v).some(x=>!isFinite(x)||x<0))h='<p class="bad">🔴 Datos inválidos: usa números ≥ 0.</p>';
+ else{const o=c.o(v);h=`<p class="mut"><b>Datos:</b> ${c.F.map(f=>f[0]+' = '+v[f[0]]).join(' · ')}</p><p><b>Fórmula:</b> ${c.f}</p><table>${o.r.map(r=>`<tr><td>${r[0]}<td><b>${r[1]}</b> ${r[2]}</tr>`).join('')}</table><p><b>Interpretación:</b> ${o.m}</p><p class="o mut">🔧 En obra: ${c.tip}</p><p class="a mut">📘 ${c.que}</p><p class="i mut">⚙ SI internamente; f por Colebrook-White (Re ≥ 2300) o 64/Re (laminar).</p>`}
+ $('#cr').innerHTML=h}
+const UN={Longitud:{mm:.001,cm:.01,m:1,'in':.0254,ft:.3048,yd:.9144},'Área':{'mm²':1e-6,'cm²':1e-4,'m²':1,'in²':6.4516e-4,'ft²':.09290304},Volumen:{L:.001,'m³':1,gal:.003785411784,'ft³':.028316846592},Caudal:{'L/s':.001,'L/min':.001/60,'L/h':.001/3600,'m³/s':1,'m³/h':1/3600,GPM:6.30901964e-5,CFM:4.719474e-4},'Presión':{Pa:1,kPa:1e3,MPa:1e6,bar:1e5,psi:6894.757,'m.c.a.':9806.65,'ft.c.a.':2989.07},Velocidad:{'m/s':1,'ft/s':.3048},Temperatura:{'°C':1,'°F':1,K:1},Potencia:{W:1,kW:1e3,HP:745.7},Viscosidad:{'Pa·s':1,cP:.001}};
+function ucInit(){$('#uc').innerHTML=`<div class="g2c"><label>Magnitud<select id="uk" onchange="ucU()">${Object.keys(UN).map(k=>`<option>${k}</option>`).join('')}</select></label><label>Unidad<select id="uu" onchange="ucR()"></select></label><label style="grid-column:1/-1">Valor<input type="number" step="any" id="uv" value="1" oninput="ucR()"></label></div><div id="ur"></div>`;ucU()}
+function ucU(){$('#uu').innerHTML=Object.keys(UN[$('#uk').value]).map(u=>`<option>${u}</option>`).join('');ucR()}
+function ucR(){const k=$('#uk').value,u=$('#uu').value,x=parseFloat($('#uv').value),t=UN[k];let o={};
+ if(k=='Temperatura'){const K=u=='K'?x:u=='°C'?x+273.15:(x-32)*5/9+273.15;o={'°C':K-273.15,'°F':(K-273.15)*9/5+32,K}}else{const b=x*t[u];for(const q in t)o[q]=b/t[q]}
+ $('#ur').innerHTML='<table>'+Object.keys(o).map(q=>`<tr><td>${q}<td><b>${fx(o[q],6)}</b></tr>`).join('')+'</table>'}
+function cmpInit(){form($('#cmf'),[['Q','Caudal Q (L/s)',.25],['L','Longitud L (m)',15],['dz','Desnivel (m, + si el tubo baja)',3],['K','Σ K accesorios',3],['p0','Presión disponible al inicio (mca)',3],['pm','Presión mínima requerida (mca)',2],['vm','Velocidad máx. (m/s)',2.5],['T','Temperatura (°C)',20],['mat','Material','PVC',Object.keys(MAT).map(k=>[k,MAT[k].n])]],cmpRun)}
+function cmpRun(){const v=vals($('#cmf')),m=MAT[v.mat],nu=nuT(v.T);let h='<table><tr><th>Ø<th>V m/s<th>Re<th>f<th>hf m<th>hm m<th>p final<th>Estado</tr>',best=null;
+ SZ.forEach(z=>{const D=m.id[z]/1000,V=v.Q/1000/A_(D),Re=V*D/nu,f=cole(Re,m.e/1000,D),hf=f*v.L/D*V*V/2/G,hm=v.K*V*V/2/G,pf=v.p0+v.dz-hf-hm-V*V/2/G,st=pf<v.pm||V>v.vm*1.2?'🔴':(V>v.vm||pf-v.pm<.5)?'🟡':'🟢';if(st=='🟢'&&!best)best=z;
+  h+=`<tr><td>${z}<td>${fx(V,3)}<td>${fx(Re,4)}<td>${fx(f,3)}<td>${fx(hf,3)}<td>${fx(hm,3)}<td>${fx(pf,3)}<td>${st}</tr>`});
+ $('#cmr').innerHTML=h+'</table><p>'+(best?`🟢 Para estos datos el menor diámetro adecuado es <b>${best}</b>. Diámetros mayores reducen la pérdida pero cuestan más. Verifica contra la normativa aplicable.`:'🔴 Ningún diámetro cumple: aumenta la presión disponible o reduce caudal, longitud o accesorios.')+'</p>'}
+function cmpLoad(){const p=pipes.find(q=>q.id==sel);if(!p){$('#cmr').innerHTML='<p class="warn">Selecciona un tubo en el Diseñador y vuelve.</p>';return}
+ const a=all(),par=pipes.find(x=>x.to==p.from),e=$('#cmf'),r=a.res[p.id];
+ setv(e,'Q',+a.dem[p.id].toFixed(3));setv(e,'L',+len(p).toFixed(2));setv(e,'dz',+(nodes[p.from].z-nodes[p.to].z).toFixed(2));setv(e,'K',+r.K.toFixed(2));setv(e,'p0',+(par?a.res[par.id].p:H0()-nodes[p.from].z).toFixed(2));setv(e,'T',P.T);setv(e,'mat',p.mat);cmpRun()}
+function diag(a){const m=[],ps=pipes.filter(p=>p.end);
+ if(!pipes.length)m.push(['r','No hay tubos: dibuja desde el tinaco.']);
+ if(pipes.length&&!ps.length)m.push(['y','No hay muebles: asigna WC o lavabo al extremo de un tubo.']);
+ if(P.vol<=0&&P.boost<=0)m.push(['r','El tinaco está vacío: no hay carga.']);
+ ps.forEach(p=>{const r=a.res[p.id],mn=pmin(p),n=END[p.end]+' (T'+p.id+')';
+  if(nodes[p.to].z>H0())m.push(['r',n+': está por encima del nivel de agua; no fluye.']);
+  else if(r.p<0)m.push(['r',n+': presión negativa.']);else if(r.p<mn)m.push(['r',`${n}: ${r.p.toFixed(2)} mca < mínima ${mn}. Sube el tinaco, aumenta Ø o agrega carga de bomba.`]);else m.push(['g',`${n}: presión correcta (${r.p.toFixed(2)} mca).`])});
+ pipes.forEach(p=>{const r=a.res[p.id],s=strength(p,a.res),par=pipes.find(x=>x.to==p.from),t='T'+p.id;
+  if(r.v>3)m.push(['r',`${t}: V = ${r.v.toFixed(2)} m/s excesiva (ruido, erosión).`]);else if(r.v>2.5)m.push(['y',`${t}: V = ${r.v.toFixed(2)} m/s alta.`]);
+  if(!a.dem[p.id])m.push(['b',t+': no alimenta ningún mueble.']);
+  if(par&&MAT[p.mat].id[p.sz]>MAT[par.mat].id[par.sz])m.push(['y',`${t}: el diámetro crece aguas abajo de T${par.id}.`]);
+  if(!s.tok)m.push(['r',`${t}: ${MAT[p.mat].n} no soporta ${P.T} °C.`]);else if(s.u>1)m.push(['r',`${t}: presión máx. ${(s.u*100).toFixed(0)} % de la admisible (excede).`])});
+ return m}
+function diagR(a){const o={r:0,y:1,b:2,g:3},I={r:'🔴',y:'🟡',b:'🔵',g:'🟢'};$('#dg').innerHTML=diag(a).sort((x,y)=>o[x[0]]-o[y[0]]).map(m=>`<div style="margin:3px 0">${I[m[0]]} ${m[1]}</div>`).join('')}
+function bom(){const o={},add=(k,d,q,u)=>{(o[k]=o[k]||{k,d,q:0,u}).q+=q},ks=kidsOf(),w=1+BG.w/100;
+ pipes.forEach(p=>{const m=MAT[p.mat].n.split(' (')[0],par=pipes.find(x=>x.to==p.from),n=(ks[p.from]||[]).length;add('T|'+p.mat+p.sz,`Tubo ${m} ${p.sz}`,len(p)*w,'m');
+  if(n>1){if(p.id==ks[p.from][0].id)add('TE|'+p.mat+p.sz,`Tee ${m} ${p.sz}`,1,'pza')}
+  else if(par){const d=Math.abs(((ang(p)-ang(par)+540)%360)-180);if(d>=67.5)add('C9|'+p.mat+p.sz,`Codo 90° ${m} ${p.sz}`,1,'pza');else if(d>=22.5)add('C4|'+p.mat+p.sz,`Codo 45° ${m} ${p.sz}`,1,'pza')}
+  if(par&&par.sz!=p.sz)add('R|'+p.mat+par.sz+p.sz,`Reducción ${m} ${par.sz} → ${p.sz}`,1,'pza');
+  if(p.valve)add('V|'+p.valve+p.sz,`${VAL[p.valve][0]} ${p.sz}`,1,'pza');
+  if(p.end)add('F|'+p.end,END[p.end]+' (mueble)',1,'pza')});
+ add('TK','Tinaco '+P.cap+' L',1,'pza');return Object.values(o)}
+const kk=k=>k.replace(/\W/g,'_'),$m=x=>x.toLocaleString('es-MX',{style:'currency',currency:'MXN'});
+function bomR(){form($('#bp'),[['w','Desperdicio de tubo (%)',BG.w],['lab','Mano de obra (% de materiales)',BG.lab],['util','Utilidad (%)',BG.util],['iva','IVA (%)',BG.iva]],()=>{const v=vals($('#bp'));if(Object.values(v).every(x=>isFinite(x)&&x>=0)){BG=v;bomT()}});bomT()}
+function bomT(){$('#bt').innerHTML='<table><tr><th>Concepto<th>Cant.<th>Unid.<th>P. unit.<th>Subtotal</tr>'+bom().map(r=>`<tr><td>${esc(r.d)}<td>${fx(r.q,4)}<td>${r.u}<td><input type="number" step="any" min="0" style="width:84px" value="${PR[kk(r.k)]||''}" placeholder="0" onchange="PR['${kk(r.k)}']=+this.value;tot()"><td id="s_${kk(r.k)}"></tr>`).join('')+'</table>';tot()}
+function tot(){let s=0;bom().forEach(r=>{const t=r.q*(PR[kk(r.k)]||0);s+=t;const e=$('#s_'+kk(r.k));if(e)e.textContent=$m(t)});
+ const l=s*BG.lab/100,u=(s+l)*BG.util/100,i=(s+l+u)*BG.iva/100;$('#bx').innerHTML=`<table><tr><td>Materiales<td>${$m(s)}</tr><tr><td>Mano de obra (${BG.lab} %)<td>${$m(l)}</tr><tr><td>Utilidad (${BG.util} %)<td>${$m(u)}</tr><tr><td>IVA (${BG.iva} %)<td>${$m(i)}</tr><tr><td><b>TOTAL</b><td><b>${$m(s+l+u+i)}</b></tr></table>`}
+function csv(){return 'Concepto,Cantidad,Unidad,Precio unitario,Subtotal\n'+bom().map(r=>{const p=PR[kk(r.k)]||0;return `"${r.d}",${r.q.toFixed(3)},${r.u},${p},${(r.q*p).toFixed(2)}`}).join('\n')}
+const prjSnap=()=>JSON.stringify({v:2,name:$('#pn').value,P,nodes,pipes,nid,pid,PR,BG});
+function okP(o){const n=x=>typeof x=='number'&&isFinite(x);try{return !!(o&&o.P&&['cap','vol','th','qwc','qlav','pwc','plav','T','boost'].every(k=>n(o.P[k]))&&o.nodes&&o.nodes[0]&&Object.values(o.nodes).every(q=>n(q.x)&&n(q.z))&&Array.isArray(o.pipes)&&o.pipes.every(p=>n(p.id)&&n(p.from)&&n(p.to)&&o.nodes[p.from]&&o.nodes[p.to]&&MAT[p.mat]&&SZ.includes(p.sz)&&p.valve in VAL&&p.end in END)&&n(o.nid)&&n(o.pid))}catch(e){return false}}
+function loadP(o){if(!okP(o)){$('#pm').textContent='🔴 Archivo inválido o dañado.';return}
+ P=o.P;nodes=o.nodes;pipes=o.pipes;nid=o.nid;pid=o.pid;PR={};for(const k in (o.PR||{}))if(typeof o.PR[k]=='number')PR[kk(k)]=o.PR[k];
+ if(o.BG&&['w','lab','util','iva'].every(k=>typeof o.BG[k]=='number'))BG=o.BG;$('#pn').value=String(o.name||'Proyecto').slice(0,60);sel=null;draw=null;gpanel();ppanel();render();$('#pm').textContent='🟢 Proyecto cargado.'}
+const LS=()=>{try{return JSON.parse(localStorage.getItem('hid_prj')||'{}')}catch(e){return{}}};
+function prjSave(){try{const d=LS();d[$('#pn').value.slice(0,60)||'Proyecto']=prjSnap();localStorage.setItem('hid_prj',JSON.stringify(d));$('#pm').textContent='🟢 Guardado en este navegador.'}catch(e){$('#pm').textContent='🟡 No se pudo guardar aquí; usa Exportar JSON.'}prjList()}
+function prjList(){const k=Object.keys(LS());$('#pl').innerHTML=k.length?'<p class="mut" style="margin:8px 0 2px">Guardados:</p>'+k.map((n,i)=>`<div>${esc(n)} <button onclick="prjOpen(${i})">Abrir</button> <button class="dg" onclick="prjDel(${i})">Borrar</button></div>`).join(''):''}
+function prjOpen(i){const d=LS(),k=Object.keys(d)[i];try{loadP(JSON.parse(d[k]))}catch(e){$('#pm').textContent='🔴 Archivo dañado.'}}
+function prjDel(i){const d=LS();delete d[Object.keys(d)[i]];try{localStorage.setItem('hid_prj',JSON.stringify(d))}catch(e){}prjList()}
+function prjExp(){const t=$('#jx');t.value=prjSnap();t.select();try{navigator.clipboard.writeText(t.value)}catch(e){}$('#pm').textContent='JSON listo: cópialo y guárdalo en un archivo .json.'}
+function prjImp(){try{loadP(JSON.parse($('#jx').value))}catch(e){$('#pm').textContent='🔴 JSON no válido.'}}
+function rep(){const a=all(),r=$('#rp');r.hidden=false;
+ r.innerHTML=`<h3>Reporte: ${esc($('#pn').value)}</h3><p class="mut">${new Date().toLocaleDateString('es-MX')} · Tinaco ${P.cap} L (${P.vol} L), base z=${nodes[0].z} m, bomba ${P.boost} mca, agua ${P.T} °C</p><h3>Diagnóstico</h3>${$('#dg').innerHTML}<h3>Muebles</h3>${$('#rf').innerHTML}<h3>Tubos</h3><div style="overflow-x:auto">${$('#rt').innerHTML}</div><h3>Materiales</h3><div style="overflow-x:auto"><table>${bom().map(x=>`<tr><td>${esc(x.d)}<td>${fx(x.q,4)} ${x.u}</tr>`).join('')}</table></div><p class="mut">Este resultado es una estimación / cálculo técnico y debe ser validado por un profesional competente antes de ejecutarse en obra.</p><div class="tb"><button onclick="try{window.print()}catch(e){}">🖨 Imprimir</button></div>`;r.scrollIntoView()}
+function tab(t){['dis','calc','cmp','bom','prj'].forEach(x=>$('#p-'+x).hidden=x!=t);document.querySelectorAll('#tabs button').forEach(b=>b.className=b.dataset.t==t?'on':'');if(t=='bom')bomR();if(t=='cmp')cmpRun();if(t=='prj')prjList()}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>tab(b.dataset.t));
+$('#md').onchange=e=>document.body.dataset.m=e.target.value;
+init();calcInit();ucInit();cmpInit();document.body.dataset.m='obra';
+</script></body></html>
